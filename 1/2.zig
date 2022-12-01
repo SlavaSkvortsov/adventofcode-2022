@@ -1,5 +1,5 @@
 const std = @import("std");
-const data = @embedFile("data.txt");
+const io = std.io;
 
 fn replace_smallest(arr: []i64, callories: i64) void {
     var i = arr.len;
@@ -17,13 +17,17 @@ fn replace_smallest(arr: []i64, callories: i64) void {
     }
 }
 
-test "two" {
-    var lines = std.mem.split(u8, data, "\n");
+pub fn main() !void {
+    var file = try std.fs.cwd().openFile("data.txt", .{});
+    defer file.close();
+    var buf_reader = io.bufferedReader(file.reader());
+    var in_stream = buf_reader.reader();
+    var buf: [1024]u8 = undefined;
 
     var top_elves = [3]i64{ 0, 0, 0 };
     var current_elf_calories: i64 = 0;
 
-    while (lines.next()) |line| {
+    while (try in_stream.readUntilDelimiterOrEof(&buf, '\n')) |line| {
         if (line.len == 0) {
             replace_smallest(&top_elves, current_elf_calories);
             current_elf_calories = 0;

@@ -1,13 +1,17 @@
 const std = @import("std");
-const data = @embedFile("data.txt");
+const io = std.io;
 
-test "one" {
-    var lines = std.mem.split(u8, data, "\n");
+pub fn main() !void {
+    var file = try std.fs.cwd().openFile("data.txt", .{});
+    defer file.close();
+    var buf_reader = io.bufferedReader(file.reader());
+    var in_stream = buf_reader.reader();
+    var buf: [1024]u8 = undefined;
 
     var the_best_elf_calories: i64 = 0;
     var current_elf_calories: i64 = 0;
 
-    while (lines.next()) |line| {
+    while (try in_stream.readUntilDelimiterOrEof(&buf, '\n')) |line| {
         if (line.len == 0) {
             if (current_elf_calories > the_best_elf_calories) {
                 the_best_elf_calories = current_elf_calories;
