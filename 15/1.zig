@@ -22,6 +22,8 @@ pub fn main() !void {
 
     var locked = std.AutoHashMap(i64, void).init(allocator);
     defer locked.deinit();
+    var beacons = std.AutoHashMap(Coords, void).init(allocator);
+    defer beacons.deinit();
 
     while (try in_stream.readUntilDelimiterOrEof(&buf, '\n')) |line| {
         if (line.len == 0) continue;
@@ -35,6 +37,7 @@ pub fn main() !void {
             .x = try std.fmt.parseInt(i64, it.next().?, 10),
             .y = try std.fmt.parseInt(i64, it.next().?, 10),
         };
+        try beacons.put(beacon_coords, undefined);
         var distance = try manhattan_distance(sensor_coords, beacon_coords);
 
         if (sensor_coords.y < Y and sensor_coords.y + distance >= Y) {
@@ -58,5 +61,15 @@ pub fn main() !void {
         }
     }
 
-    print("count: {}\n", .{ locked.count() });
+    var keys = beacons.keyIterator();
+    var minus: u8 = 0;
+    while (keys.next()) |key| {
+        if (locked.contains(key.x) and key.y == Y) {
+            print("locked, substract: ({}, {})\n", .{key.x, key.y});
+            minus += 1;
+        } else {
+            print("beacon is not locked: ({}, {})\n", .{key.x, key.y});
+        }
+    }
+    print("count: {}\n", .{ locked.count() - minus});
 }
