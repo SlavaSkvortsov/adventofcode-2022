@@ -75,15 +75,60 @@ fn scan_point(point: Coords, sensors: std.ArrayList(Sensor)) !bool{
 }
 
 
+fn check_sensor_borders(sensors: std.ArrayList(Sensor), check_sensor: Sensor) !?Coords {
+    for (sensors.items) |sensor| {
+        if (sensor.coords.x == check_sensor.coords.x and sensor.coords.y == check_sensor.coords.y) continue;
+
+        var top_y = sensor.coords.y + sensor.manhattan_distance + 1;
+        var bottom_y = sensor.coords.y - sensor.manhattan_distance - 1;
+        var left_x = sensor.coords.x - sensor.manhattan_distance - 1;
+        var right_x = sensor.coords.x + sensor.manhattan_distance + 1;
+
+        var x = sensor.coords.x;
+        var y = top_y;
+
+        // From top to right
+        while (x < right_x) {
+            x += 1;
+            y -= 1;
+            var point = Coords {.x = x, .y = y};
+            if (try scan_point(point, sensors)) return point;
+        }
+
+        // From right to bottom
+        while (y > bottom_y) {
+            x -= 1;
+            y -= 1;
+            var point = Coords {.x = x, .y = y};
+            if (try scan_point(point, sensors)) return point;
+        }
+
+        // From bottom to left
+        while (x > left_x) {
+            x -= 1;
+            y += 1;
+            var point = Coords {.x = x, .y = y};
+            if (try scan_point(point, sensors)) return point;
+        }
+
+        // From left to top
+        while (y < top_y) {
+            x += 1;
+            y += 1;
+            var point = Coords {.x = x, .y = y};
+            if (try scan_point(point, sensors)) return point;
+        }
+    }
+    return null;
+}
+
+
 pub fn main() !void {
     var file = try std.fs.cwd().openFile("data.txt", .{});
     defer file.close();
     var buf_reader = io.bufferedReader(file.reader());
     var in_stream = buf_reader.reader();
     var buf: [1024]u8 = undefined;
-
-    var points = std.ArrayList(Coords).init(allocator);
-    defer points.deinit();
 
     var sensors = std.ArrayList(Sensor).init(allocator);
     defer sensors.deinit();
@@ -106,54 +151,16 @@ pub fn main() !void {
             .manhattan_distance = @intCast(u32, distance),
         }) catch unreachable;
 
-        var top_y = sensor_coords.y + distance + 1;
-        var bottom_y = sensor_coords.y - distance - 1;
-        var left_x = sensor_coords.x - distance - 1;
-        var right_x = sensor_coords.x + distance + 1;
-
-        var x = sensor_coords.x;
-        var y = top_y;
-
-        // From top to right
-        while (x < right_x) {
-            // print("x: {}, y: {}\n", .{x, y});
-            x += 1;
-            y -= 1;
-            points.append(Coords{ .x = x, .y = y }) catch unreachable;
-        }
-
-        // From right to bottom
-        while (y > bottom_y) {
-            // print("x: {}, y: {}\n", .{x, y});
-            x -= 1;
-            y -= 1;
-            points.append(Coords{ .x = x, .y = y }) catch unreachable;
-        }
-
-        // From bottom to left
-        while (x > left_x) {
-            // print("x: {}, y: {}\n", .{x, y});
-            x -= 1;
-            y += 1;
-            points.append(Coords{ .x = x, .y = y }) catch unreachable;
-        }
-
-        // From left to top
-        while (y < top_y) {
-            // print("x: {}, y: {}\n", .{x, y});
-            x += 1;
-            y += 1;
-            points.append(Coords{ .x = x, .y = y }) catch unreachable;
-        }
     }
-    print("points: {}\n", .{points.items.len});
 
-    for (points.items) |point| {
-        if (try scan_point(point, sensors)) {
-            print("FUCK YEA {}, {}\n", .{point.x, point.y});
-            print("Result={}", .{point.x * 4000000 + point.y});
-            break;
+
+    for (sensors.items) |sensor| {
+        if (try check_sensor_borders(sensors, sensor)) |point| {
+            print("point: ({}, {})\n", .{point.x, point.y});
+            print("result = {}\n", .{point.x * border + point.y});
+            return;
         }
     }
 
 }
+// 10884459367718
