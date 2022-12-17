@@ -79,7 +79,7 @@ fn fill_empty(map: *std.AutoHashMap(Coords, State), sensor: Coords, beacon: Coor
 
 
 pub fn main() !void {
-    var file = try std.fs.cwd().openFile("data.txt", .{});
+    var file = try std.fs.cwd().openFile("test_data.txt", .{});
     defer file.close();
     var buf_reader = io.bufferedReader(file.reader());
     var in_stream = buf_reader.reader();
